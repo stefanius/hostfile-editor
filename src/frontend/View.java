@@ -26,6 +26,8 @@ public class View extends JFrame {
         this.setSize(500, 300);
         this.setVisible(true);
 
+        this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
         JButton btn = new JButton();
 
         btn.addActionListener(new Listener(listPane, controller));
