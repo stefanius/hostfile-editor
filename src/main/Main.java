@@ -4,9 +4,6 @@ import controllers.HostlistController;
 import frontend.ListPane;
 import frontend.View;
 
-import javax.swing.*;
-import java.awt.*;
-
 /**
  * Created by stefanius on 09/06/14.
  */
