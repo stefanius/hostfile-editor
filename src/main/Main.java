@@ -4,6 +4,8 @@ import controllers.HostlistController;
 import frontend.ListPane;
 import frontend.View;
 
+import misc.HostfileProccessorCreator;
+import observer.pattern.interfaces.ISubject;
 /**
  * Created by stefanius on 09/06/14.
  */
@@ -15,13 +17,9 @@ public class Main {
         HostlistController controller = new HostlistController("/etc/hosts");
         View view = new View(controller, listPane);
 
+        controller.setListPane(listPane);
         controller.readHostfile();
-
-        for(Row row : controller.getHostData().getRows()){
-            listPane.addListItem(row);
-        }
-
-        listPane.setVisible(true);
-        view.setListpane(listPane);
+        controller.notifyObservers();
+        view.pack();
     }
 }

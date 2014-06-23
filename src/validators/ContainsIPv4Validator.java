@@ -20,6 +20,10 @@ public class ContainsIPv4Validator implements IValidator {
             return false;
         }
 
+        if (!s.contains(".")) {
+            return false;
+        }
+
         return this.matchIPv4(s);
     }
 

@@ -23,7 +23,7 @@ public class Listener implements ActionListener{
 
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
-        this.controller.save(listPane.getPaneItems());
+       // this.controller.save(listPane.getPaneItems());
     }
 }
 

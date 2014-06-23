@@ -3,16 +3,23 @@ package controllers;
 import extractors.HostnameFromHostfileExtractor;
 import extractors.IPv4Extractor;
 import extractors.IPv6Extractor;
+import frontend.ListPane;
 import frontend.PaneItem;
-import interfaces.IExtractor;
 import interfaces.IValidator;
 import main.HostData;
-import reader.StringReader;
+import misc.HostfileProccessorCreator;
+import misc.HostfileProcessor;
+import misc.IpVersionChecker;
+import observer.ConsoleObserver;
+import observer.GraphicalObserver;
+import subject.Record;
 import switchChecker.HashtagCommentSwitch;
 import validators.ContainsIPv4Validator;
 import validators.ContainsIPv6Validator;
 
+import javax.swing.*;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 /**
@@ -20,76 +27,104 @@ import java.util.ArrayList;
  */
 public class HostlistController {
 
-    protected HostData hostData;
+    protected ArrayList<Record> records;
 
     protected String hostfile;
 
-    protected IValidator ipv4Validator;
+    protected IpVersionChecker ipVersionChecker;
 
-    protected IValidator ipv6Validator;
+    protected IPv4Extractor iPv4Extractor;
 
-    protected IPv4Extractor ipExtractor;
-
-    protected IPv6Extractor ip6Extractor;
+    protected IPv6Extractor iPv6Extractor;
 
     protected HostnameFromHostfileExtractor hostnameExtractor;
 
-    protected StringReader reader;
+    protected HostfileProccessorCreator hostfileProccessorCreator;
+
+    protected HostfileProcessor hostfileProcessor;
+
+    protected HashtagCommentSwitch hashtagCommentSwitch;
+
+    protected ListPane listPane;
 
     public HostlistController(String hostfile) {
-        this.hostData = new HostData();
-        this.ipv4Validator = new ContainsIPv4Validator();
-        this.ipv6Validator = new ContainsIPv6Validator();
-        this.ipExtractor = new IPv4Extractor();
-        this.ip6Extractor = new IPv6Extractor();
+        this.records = new ArrayList<Record>();
+        this.ipVersionChecker = new IpVersionChecker(new ContainsIPv4Validator(), new ContainsIPv6Validator());
         this.hostnameExtractor = new HostnameFromHostfileExtractor();
-        this.reader = new StringReader(hostfile);
+        this.hostfileProccessorCreator = new HostfileProccessorCreator(hostfile);
+        this.hostfileProcessor = this.hostfileProccessorCreator.getHostfileProcessor();
+        this.hashtagCommentSwitch = new HashtagCommentSwitch();
+        this.iPv4Extractor = new IPv4Extractor();
+        this.iPv6Extractor = new IPv6Extractor();
+
         this.hostfile = hostfile;
     }
 
-    public void readHostfile()
-    {
-        this.reader.read();
+    public void readHostfile() {
+        this.hostfileProcessor.read();
 
-        for(String line : this.reader.getLines()){
-            if (line != null && !line.isEmpty() && this.ipv4Validator.validate(line)){
-                 this.hostData.addRow(new HashtagCommentSwitch().check(line), this.ipExtractor.extract(line), this.hostnameExtractor.extract(line));
-            }
+        for(String line : this.hostfileProcessor.getLines()){
+            if (this.ipVersionChecker.isOrHasIpv4(line)) {
+                Record record = new Record(
+                        this.hashtagCommentSwitch.check(line),
+                        this.iPv4Extractor.extract(line),
+                        this.hostnameExtractor.extract(line)
+                );
 
-            if (line != null && !line.isEmpty() && this.ipv6Validator.validate(line)){
-                this.hostData.addRow(new HashtagCommentSwitch().check(line), this.ip6Extractor.extract(line), this.hostnameExtractor.extract(line));
+                record.registerObserver(new ConsoleObserver());
+                record.registerObserver(new GraphicalObserver(this.listPane));
+
+                this.records.add(record);
+            } else if (this.ipVersionChecker.isOrHasIpv6(line)) {
+                Record record = new Record(
+                        this.hashtagCommentSwitch.check(line),
+                        this.iPv6Extractor.extract(line),
+                        this.hostnameExtractor.extract(line)
+                );
+
+                record.registerObserver(new ConsoleObserver());
+                record.registerObserver(new GraphicalObserver(this.listPane));
+
+                this.records.add(record);
             }
         }
     }
 
-    public HostData getHostData()
-    {
-        return this.hostData;
+    public ArrayList<Record> getRecords() {
+        return this.records;
     }
 
-    public void save(ArrayList<PaneItem> list)
-    {
-        StringBuffer buffer = new StringBuffer();
-        for(PaneItem item : list){
+    public void notifyObservers(){
+        for(Record record : this.records){
+            record.notifyObservers();
+        }
+    }
 
-            if(!item.getEnabled().isSelected()){
+    public void save(ArrayList<PaneItem> list) {
+        StringBuffer buffer = new StringBuffer();
+        for (PaneItem item : list) {
+
+            if (!item.getEnabled().isSelected()) {
                 buffer.append("#");
             }
 
-            if(item.getIp().getText().length() > 1 && item.getHsotname().getText().length() > 1) {
+            if (item.getIp().getText().length() > 1 && item.getHsotname().getText().length() > 1) {
                 buffer.append(String.format("%-40s %s", item.getIp().getText(), item.getHsotname().getText()));
 
                 buffer.append("\n");
             }
         }
 
-        try{
+        try {
             PrintWriter writer = new PrintWriter(this.hostfile, "UTF-8");
             writer.println(buffer);
             writer.close();
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e.getMessage());
         }
+    }
 
+    public void setListPane(ListPane listPane) {
+        this.listPane = listPane;
     }
 }

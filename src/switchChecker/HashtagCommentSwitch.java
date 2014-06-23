@@ -27,5 +27,4 @@ public class HashtagCommentSwitch implements ISwitchChecker {
 
         return true;
     }
-
 }
