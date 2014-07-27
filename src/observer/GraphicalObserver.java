@@ -20,12 +20,12 @@ public class GraphicalObserver extends Observer {
 
     protected JTextField hostname;
 
-    public GraphicalObserver(JPanel viewElement) {
+    public GraphicalObserver(JPanel viewElement, JCheckBox checkbox, JTextField ip, JTextField hostname) {
         super();
         this.viewElement = viewElement;
-        this.checkbox = new JCheckBox();
-        this.ip = new JTextField();
-        this.hostname = new JTextField();
+        this.checkbox = checkbox;
+        this.ip = ip;
+        this.hostname = hostname;
 
         this.viewElement.add(this.checkbox);
         this.viewElement.add(this.ip);

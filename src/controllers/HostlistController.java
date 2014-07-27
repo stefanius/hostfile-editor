@@ -5,7 +5,10 @@ import extractors.IPv4Extractor;
 import extractors.IPv6Extractor;
 import frontend.ListPane;
 import frontend.PaneItem;
+import interfaces.IExtractor;
 import interfaces.IValidator;
+import listeners.ChangeHostnameFieldListener;
+import listeners.ChangeIpFieldListener;
 import main.HostData;
 import misc.HostfileProccessorCreator;
 import misc.HostfileProcessor;
@@ -65,29 +68,39 @@ public class HostlistController {
 
         for(String line : this.hostfileProcessor.getLines()){
             if (this.ipVersionChecker.isOrHasIpv4(line)) {
-                Record record = new Record(
-                        this.hashtagCommentSwitch.check(line),
-                        this.iPv4Extractor.extract(line),
-                        this.hostnameExtractor.extract(line)
-                );
-
-                record.registerObserver(new ConsoleObserver());
-                record.registerObserver(new GraphicalObserver(this.listPane));
-
-                this.records.add(record);
+                this.createAndAddNewRecord(line, this.iPv4Extractor, this.hostnameExtractor);
             } else if (this.ipVersionChecker.isOrHasIpv6(line)) {
-                Record record = new Record(
-                        this.hashtagCommentSwitch.check(line),
-                        this.iPv6Extractor.extract(line),
-                        this.hostnameExtractor.extract(line)
-                );
-
-                record.registerObserver(new ConsoleObserver());
-                record.registerObserver(new GraphicalObserver(this.listPane));
-
-                this.records.add(record);
+                this.createAndAddNewRecord(line, this.iPv6Extractor, this.hostnameExtractor);
             }
         }
+    }
+
+    protected void createAndAddNewRecord(String line, IExtractor ipExtractor, IExtractor hostnameExtractor){
+        Record record = new Record(
+                this.hashtagCommentSwitch.check(line),
+                ipExtractor.extract(line),
+                hostnameExtractor.extract(line)
+        );
+
+        JCheckBox enabled = new JCheckBox();
+        JTextField ip = new JTextField();
+        JTextField hostname = new JTextField();
+
+        ChangeHostnameFieldListener hostnameListener = new ChangeHostnameFieldListener(record, hostname);
+        ChangeIpFieldListener ipListener = new ChangeIpFieldListener(record, ip);
+
+        hostname.addKeyListener(hostnameListener);
+        ip.addKeyListener(ipListener);
+
+        record.registerObserver(new ConsoleObserver());
+        record.registerObserver(new GraphicalObserver(this.listPane, enabled, ip, hostname));
+
+        this.records.add(record);
+    }
+
+
+    public void addRecord(Record record){
+        this.records.add(record);
     }
 
     public ArrayList<Record> getRecords() {
@@ -98,6 +111,7 @@ public class HostlistController {
         for(Record record : this.records){
             record.notifyObservers();
         }
+
     }
 
     public void save(ArrayList<PaneItem> list) {
